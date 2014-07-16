@@ -1,8 +1,6 @@
 package fr.rpg.thepen;
 
 import java.util.ArrayList;
-import java.util.List;
-
 import org.bukkit.Location;
 
 public class Donjon {

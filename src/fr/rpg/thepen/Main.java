@@ -10,8 +10,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -20,7 +18,6 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,14 +37,11 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.Tree;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -65,7 +59,6 @@ import de.slikey.effectlib.EffectLib;
 import de.slikey.effectlib.EffectManager;
 import de.slikey.effectlib.effect.WarpEntityEffect;
 import de.slikey.effectlib.util.ParticleEffect;
-import fr.rpg.thepen.custommobs.CustomEntityZombie;
 
 public class Main extends JavaPlugin implements Listener {
 	
@@ -443,59 +436,11 @@ public class Main extends JavaPlugin implements Listener {
 		player.openInventory(inv);
 		
 	}
-
-	
-	//Events
-
-	@EventHandler
-	public void onTreeGrow(StructureGrowEvent e){
-		if (e.getSpecies() == TreeType.BIG_TREE){
-			e.setCancelled(true);
-		}
-	}
-	
-	@EventHandler
-	public void onPlayerMove(PlayerMoveEvent e) {
-		Player p = e.getPlayer();
-		Location from = e.getFrom();
-		Location to = e.getTo();
-		if(isInDonjon(p) == false){
-			for(int i = 0; i < donjons.size(); i++){
-				int radius = 2;
-				if ((from.getBlockX() != to.getBlockX()) || (from.getBlockZ() != to.getBlockZ())) {
-					if(getNearbyPlayers(donjons.get(i).getLocation(), radius).length >= 1) {
-						if(donjons.get(i).isActive()){
-							if(donjons.get(i).isOpen()){
-								donjons.get(i).setClose();
-								p.sendMessage("Ce tombeau sera votre tombeau!");
-								p.getWorld().playSound(donjons.get(i).getLocation(), Sound.WITHER_SPAWN, 1, 1);
-								indonjon.put(p, donjons.get(i));
-							}
-						}
-					}
-				}
-			}
-		}
-		if(isInDonjon(p)){
-			Donjon donj = indonjon.get(p);
-			for(int i = 0; i < donj.getRooms().size(); i++){
-				int radius = 2;
-				Room room = donj.getRooms().get(i);
-				if ((from.getBlockX() != to.getBlockX()) || (from.getBlockZ() != to.getBlockZ())) {
-					if(getNearbyPlayers(room.getLocation(), radius).length >= 1) {
-						if(room.getType() == RoomType.FIGHTROOM){
-							room.setClosed();
-						}
-					}
-				}
-			}
-		}
-	}
 	
 	@SuppressWarnings("deprecation")
-	public boolean onCommand(CommandSender sender, Command command, String CommandLabel, String[] args){
+	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args){
 		Player p = (Player) sender;
-		if(CommandLabel.equals("rpg")){
+		if(command.getName().equals("rpg")){
 			if(args.length == 0){
 				p.sendMessage(ChatColor.GOLD + "-------------------" + ChatColor.AQUA + "[" + ChatColor.GOLD + "HellFire RPG" + ChatColor.AQUA + "]" + ChatColor.GOLD + "-------------------");
 				p.sendMessage(ChatColor.AQUA + "/rpg adddonjon <name> :  " + ChatColor.GOLD + "Utilisé pour créer un donjon");
@@ -513,6 +458,9 @@ public class Main extends JavaPlugin implements Listener {
 				else{
 					p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " Vous devez ajouter un nom à votre donjon.");
 				}
+			}
+			else if(args[0].equals("give")){
+				
 			}
 			else if(args[0].equals("addroom")){
 				if(args.length == 4){
@@ -857,7 +805,6 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		return false;
 	}
-
 	@EventHandler 
 	public void onPlayerInteract(PlayerInteractEvent e){
 		Player p = e.getPlayer();
@@ -1217,17 +1164,6 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 		}
-		if(e.getDamager() instanceof Fireball){
-			Fireball a = (Fireball) e.getDamager();
-			if(a.getShooter() instanceof Player){
-				Player p = (Player) a.getShooter();
-				if(p.getItemInHand().equals(items.m_parchemin_2)){
-					if(p != e.getEntity()){
-						e.setDamage(6);
-					}
-				}
-			}
-		}
 		if(e.getDamager() instanceof Player){
 			Material type = ((Player) e.getDamager()).getItemInHand().getType();
 			Player p = (Player) e.getDamager();
@@ -1417,7 +1353,8 @@ public class Main extends JavaPlugin implements Listener {
 	    e.setExpToDrop(0);
 	  }
 	
-	@EventHandler
+	@SuppressWarnings("deprecation")
+    @EventHandler
 	public void onJoin(PlayerJoinEvent e){
 		Player p = e.getPlayer();
 		Objective obj = board.registerNewObjective(p.getName(), "dummy");
