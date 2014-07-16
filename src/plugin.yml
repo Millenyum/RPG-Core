@@ -1,0 +1,7 @@
+name: RP
+version: 1.0 Dev
+author: ThePenspinneur
+main: fr.rpg.thepen.Main
+commands: 
+   rpg:
+     description: The Base command of RPG plugin
