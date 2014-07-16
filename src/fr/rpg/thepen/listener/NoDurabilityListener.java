@@ -1,8 +1,6 @@
 package fr.rpg.thepen.listener;
 
 import org.bukkit.Material;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,10 +12,12 @@ import fr.rpg.thepen.Items;
 import fr.rpg.thepen.Main;
 
 public class NoDurabilityListener implements Listener{
-
-	Main main;
-	Items items = main.items;
-
+	private Main main;
+	@SuppressWarnings("unused")
+    private Items items = main.items;
+	public NoDurabilityListener(Main main){
+		this.main = main;
+	}
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onDamageEntity(EntityDamageByEntityEvent e){
@@ -46,7 +46,8 @@ public class NoDurabilityListener implements Listener{
 		p.updateInventory();
 	}
 
-	@EventHandler
+	@SuppressWarnings("deprecation")
+    @EventHandler
 	public void onBreackBlock(BlockBreakEvent e){
 		Material type = e.getPlayer().getItemInHand().getType();
 		if(type == Material.DIAMOND_AXE || type == Material.DIAMOND_HOE || type == Material.DIAMOND_SPADE || type == Material.DIAMOND_PICKAXE || type == Material.DIAMOND_SWORD

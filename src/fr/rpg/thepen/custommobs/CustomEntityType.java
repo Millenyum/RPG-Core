@@ -9,7 +9,7 @@ import net.minecraft.server.v1_7_R1.BiomeMeta;
 import net.minecraft.server.v1_7_R1.EntityInsentient;
 import net.minecraft.server.v1_7_R1.EntityTypes;
 import net.minecraft.server.v1_7_R1.EntityZombie;
- 
+
 import org.bukkit.entity.EntityType;
  
 public enum CustomEntityType {
@@ -92,6 +92,7 @@ e.printStackTrace();
 /**
 * Unregister our entities to prevent memory leaks. Call on disable.
 */
+@SuppressWarnings("rawtypes")
 public static void unregisterEntities() {
 for (CustomEntityType entity : values()) {
 // Remove our class references.
@@ -154,6 +155,7 @@ e.printStackTrace();
 * @return The object found
 * @throws Exception if unable to get the object.
 */
+@SuppressWarnings("rawtypes")
 private static Object getPrivateStatic(Class clazz, String f) throws Exception {
 Field field = clazz.getDeclaredField(f);
 field.setAccessible(true);
@@ -163,6 +165,7 @@ return field.get(null);
 /*
 * Since 1.7.2 added a check in their entity registration, simply bypass it and write to the maps ourself.
 */
+@SuppressWarnings({ "unchecked", "rawtypes" })
 private static void a(Class paramClass, String paramString, int paramInt) {
 try {
 ((Map) getPrivateStatic(EntityTypes.class, "c")).put(paramString, paramClass);

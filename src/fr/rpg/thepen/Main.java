@@ -7,26 +7,57 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExpEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
+import org.bukkit.event.inventory.FurnaceExtractEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.util.Vector;
 
 import com.gmail.molnardad.quester.Quester;
 
 import de.slikey.effectlib.EffectLib;
 import de.slikey.effectlib.EffectManager;
+import de.slikey.effectlib.effect.WarpEntityEffect;
+import de.slikey.effectlib.util.ParticleEffect;
 import fr.rpg.thepen.listener.AutoRebuildListener;
 import fr.rpg.thepen.listener.DamageListener;
 import fr.rpg.thepen.listener.InventoryListener;
@@ -35,6 +66,7 @@ import fr.rpg.thepen.listener.NoDurabilityListener;
 import fr.rpg.thepen.listener.NoExpListener;
 import fr.rpg.thepen.listener.PlayerListener;
 import fr.rpg.thepen.listener.ScrollListener;
+
 
 public class Main extends JavaPlugin implements Listener {
 	
@@ -59,14 +91,14 @@ public class Main extends JavaPlugin implements Listener {
 	public void onEnable() {
 		items = new Items();
 		saveConfig();
-		getServer().getPluginManager().registerEvents(new InventoryListener(), this);
-		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-		getServer().getPluginManager().registerEvents(new AutoRebuildListener(), this);
-		getServer().getPluginManager().registerEvents(new DamageListener(), this);
-		getServer().getPluginManager().registerEvents(new NoDurabilityListener(), this);
-		getServer().getPluginManager().registerEvents(new NoExpListener(), this);
-		getServer().getPluginManager().registerEvents(new ScrollListener(), this);
-		getServer().getPluginManager().registerEvents(new NoBigTreesListener(), this);
+		getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
+		getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+		getServer().getPluginManager().registerEvents(new AutoRebuildListener(this), this);
+		getServer().getPluginManager().registerEvents(new DamageListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoDurabilityListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoExpListener(this), this);
+		getServer().getPluginManager().registerEvents(new ScrollListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoBigTreesListener(this), this);
 		loadDonjons();
 		
 		System.out.println("[RPG] Enable");
@@ -239,6 +271,14 @@ public class Main extends JavaPlugin implements Listener {
 		desc6.add(ChatColor.GREEN + " Vous redonne de la vie ");
 		items.m_parchemin_7.setLore(desc6);
 		items.parchemin_7.setItemMeta(items.m_parchemin_7);
+		
+	items.m_horseinvocator.setDisplayName(ChatColor.AQUA + "Invoquer la monture");
+		ArrayList<String> lore = new ArrayList<String>();
+		lore.add(ChatColor.GREEN + "Permet, en 3 secondes,");
+		lore.add(ChatColor.GREEN + "d'invoquer une monture.");
+		items.m_horseinvocator.setLore(lore);
+		items.horseinvocator.setItemMeta(items.m_horseinvocator);
+		
 	}
 	
 	private boolean setupQuester()
@@ -418,13 +458,10 @@ public class Main extends JavaPlugin implements Listener {
 		player.openInventory(inv);
 		
 	}
-
-
-
 	@SuppressWarnings("deprecation")
-	public boolean onCommand(CommandSender sender, Command command, String CommandLabel, String[] args){
+	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args){
 		Player p = (Player) sender;
-		if(CommandLabel.equals("rpg")){
+		if(command.getName().equals("rpg")){
 			if(args.length == 0){
 				p.sendMessage(ChatColor.GOLD + "-------------------" + ChatColor.AQUA + "[" + ChatColor.GOLD + "HellFire RPG" + ChatColor.AQUA + "]" + ChatColor.GOLD + "-------------------");
 				p.sendMessage(ChatColor.AQUA + "/rpg adddonjon <name> :  " + ChatColor.GOLD + "Utilisé pour créer un donjon");
@@ -442,6 +479,9 @@ public class Main extends JavaPlugin implements Listener {
 				else{
 					p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " Vous devez ajouter un nom à votre donjon.");
 				}
+			}
+			else if(args[0].equals("give")){
+				
 			}
 			else if(args[0].equals("addroom")){
 				if(args.length == 4){
@@ -787,8 +827,6 @@ public class Main extends JavaPlugin implements Listener {
 		return false;
 	}
 
-
-	  
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public class CooldownArbalete implements Runnable{

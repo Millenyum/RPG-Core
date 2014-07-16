@@ -38,5 +38,8 @@ public class Items {
 	
 	public ItemStack parchemin_7 = new ItemStack(Material.EMPTY_MAP);
 	public ItemMeta m_parchemin_7  = parchemin_7.getItemMeta();
+	
+	public ItemStack horseinvocator = new ItemStack(Material.DIAMOND_BARDING);
+	public ItemMeta m_horseinvocator = horseinvocator.getItemMeta();
 			
 }

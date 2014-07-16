@@ -3,6 +3,7 @@ package fr.rpg.thepen.listener;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,9 +12,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerInventoryEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+
 import fr.rpg.thepen.Donjon;
 import fr.rpg.thepen.Door;
 import fr.rpg.thepen.DoorType;
@@ -23,10 +32,12 @@ import fr.rpg.thepen.Room;
 import fr.rpg.thepen.RoomType;
 
 public class PlayerListener implements Listener{
-
-	public static Main main;
-	public Items items = main.items;
-	
+	private Main main;
+	@SuppressWarnings("unused")
+    private Items items = main.items;
+	public PlayerListener(Main main){
+		this.main = main;
+	}
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent e) {
 		Player p = e.getPlayer();
@@ -236,15 +247,60 @@ public class PlayerListener implements Listener{
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onPlayerDrop(PlayerDropItemEvent e){
-		if(e.getPlayer().isOp()){
-			return;
+		Player p = e.getPlayer();
+		if(e.getItemDrop().getItemStack().equals(items.horseinvocator)){
+			e.getItemDrop().remove();
+			p.getInventory().setItem(8, items.horseinvocator);
 		}
-		e.setCancelled(true);
-		e.getPlayer().updateInventory();
+		else if(e.getItemDrop().getItemStack().equals(items.parchemin_1)){
+			e.getItemDrop().remove();
+			p.getInventory().setItem(7, items.parchemin_1);
+		}
 	}
 	
-
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent e){
+		Player p = e.getPlayer();
+		p.getInventory().setItem(8, items.horseinvocator);
+		p.getInventory().setItem(7, items.parchemin_1);
+	}
+	
+	@EventHandler
+	@SuppressWarnings("deprecation")
+	public void onInventoryClick(InventoryClickEvent e){
+		Player p = (Player) e.getWhoClicked();
+		if(e.getInventory().equals(p.getInventory())){
+			if(e.getSlot() == 7 || e.getSlot() == 8){
+				p.updateInventory();
+				e.setCancelled(true);
+				p.closeInventory();
+			}
+			if(e.getSlot() == 0){
+				Material type = e.getCursor().getType();
+				if(!(type == Material.IRON_SWORD || type == Material.IRON_AXE ||
+					type == Material.STONE_SWORD || type == Material.STONE_AXE ||
+					type == Material.WOOD_SWORD || type == Material.WOOD_AXE ||
+					type == Material.GOLD_SWORD || type == Material.GOLD_SWORD ||
+					type == Material.DIAMOND_AXE || type == Material.DIAMOND_SWORD || type == Material.AIR)){
+					p.closeInventory();
+					p.getWorld().dropItem(p.getLocation(), e.getCursor());
+					p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Cette case ne peut contenir qu'une arme de melée");
+					p.updateInventory();
+					e.setCancelled(true);
+				}
+			}
+			if(e.getSlot() == 1){
+				Material type = e.getCursor().getType();
+				if(!(type == Material.BOW || e.getCursor() == items.arbalete || type == Material.AIR)){
+					p.closeInventory();
+					p.getWorld().dropItem(p.getLocation(), e.getCursor());
+					p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Cette case ne peut contenir qu'une arme de portée");
+					p.updateInventory();
+					e.setCancelled(true);
+				}
+			}
+		}	
+	}
 }

@@ -5,8 +5,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.StructureGrowEvent;
 
-public class NoBigTreesListener implements Listener{
+import fr.rpg.thepen.Items;
+import fr.rpg.thepen.Main;
 
+public class NoBigTreesListener implements Listener{
+	private Main main;
+	@SuppressWarnings("unused")
+    private Items items = main.items;
+	public NoBigTreesListener(Main main){
+		this.main = main;
+	}
 	@EventHandler
 	public void onTreeGrow(StructureGrowEvent e){
 		if (e.getSpecies() == TreeType.BIG_TREE){

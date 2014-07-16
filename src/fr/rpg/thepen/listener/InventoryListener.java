@@ -16,10 +16,11 @@ import fr.rpg.thepen.Items;
 import fr.rpg.thepen.Main;
 
 public class InventoryListener implements Listener{
-
-	Main main;
-	Items items = main.items;
-	
+	private Main main;
+	private Items items = main.items;
+	public InventoryListener(Main main){
+		this.main = main;
+	}
 	public FileConfiguration getConfig(){
 		return main.getConfig();
 	}
@@ -29,14 +30,6 @@ public class InventoryListener implements Listener{
 	
 	public void onInventoryClick(InventoryClickEvent e){
 		Player p = (Player) e.getWhoClicked();
-		if(e.getInventory().equals(p.getInventory())){
-			if(e.getSlot() == 7 || e.getSlot() == 8){
-				p.updateInventory();
-				e.setCancelled(true);
-				p.closeInventory();
-				p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Ces items ne peuvent pas être déplacés!");
-			}
-		}
 		
 		if(ChatColor.stripColor(e.getInventory().getName()).equalsIgnoreCase("Selectionne ta race")){
 			e.setCancelled(true);

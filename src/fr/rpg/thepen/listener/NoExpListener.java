@@ -12,8 +12,16 @@ import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 
-public class NoExpListener implements Listener{
+import fr.rpg.thepen.Items;
+import fr.rpg.thepen.Main;
 
+public class NoExpListener implements Listener{
+	private Main main;
+	@SuppressWarnings("unused")
+    private Items items = main.items;
+	public NoExpListener(Main main){
+		this.main = main;
+	}
 	@EventHandler
 	public void onBlockExp(BlockExpEvent e)
 	  {
