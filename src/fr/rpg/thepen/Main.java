@@ -48,7 +48,7 @@ public class Main extends JavaPlugin implements Listener {
 	public HashMap<Player, Donjon> setroom_donjon = new HashMap<Player, Donjon>();
 	public HashMap<Player, String> setroom_name = new HashMap<Player, String>();
 	public HashMap<Player, Location> setroom_location = new HashMap<Player, Location>();
-	public Items items = new Items();
+	public static Items items;
 	public EffectManager effectmanager;
 	ScoreboardManager manager;
 	public Scoreboard board;
@@ -57,6 +57,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	@Override
 	public void onEnable() {
+		items = new Items();
 		saveConfig();
 		getServer().getPluginManager().registerEvents(new InventoryListener(), this);
 		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
