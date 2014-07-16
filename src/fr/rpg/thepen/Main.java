@@ -7,90 +7,65 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.TreeType;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.ExperienceOrb;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockExpEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
-import org.bukkit.event.inventory.FurnaceExtractEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerFishEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.Tree;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
-import org.bukkit.util.Vector;
 
 import com.gmail.molnardad.quester.Quester;
 
 import de.slikey.effectlib.EffectLib;
 import de.slikey.effectlib.EffectManager;
-import de.slikey.effectlib.effect.WarpEntityEffect;
-import de.slikey.effectlib.util.ParticleEffect;
-import fr.rpg.thepen.custommobs.CustomEntityZombie;
+import fr.rpg.thepen.listener.AutoRebuildListener;
+import fr.rpg.thepen.listener.DamageListener;
+import fr.rpg.thepen.listener.InventoryListener;
+import fr.rpg.thepen.listener.NoBigTreesListener;
+import fr.rpg.thepen.listener.NoDurabilityListener;
+import fr.rpg.thepen.listener.NoExpListener;
+import fr.rpg.thepen.listener.PlayerListener;
+import fr.rpg.thepen.listener.ScrollListener;
 
 public class Main extends JavaPlugin implements Listener {
 	
 	ArrayList<Player> setters = new ArrayList<Player>();
-	HashMap<Player, String> setdonjon_name = new HashMap<Player, String>();
-	HashMap<Player, Location> setdonjon_location = new HashMap<Player, Location>();
-	HashMap<String, Location> setdoor = new HashMap<String, Location>();
-	ArrayList<Donjon> donjons = new ArrayList<Donjon>();
-	HashMap<Player, Donjon> indonjon = new HashMap<Player, Donjon>();
-	HashMap<Player, RoomType> setroom_type = new HashMap<Player, RoomType>();
-	HashMap<Player, Donjon> setroom_donjon = new HashMap<Player, Donjon>();
-	HashMap<Player, String> setroom_name = new HashMap<Player, String>();
-	HashMap<Player, Location> setroom_location = new HashMap<Player, Location>();
-	
+	public HashMap<Player, String> setdonjon_name = new HashMap<Player, String>();
+	public HashMap<Player, Location> setdonjon_location = new HashMap<Player, Location>();
+	public HashMap<String, Location> setdoor = new HashMap<String, Location>();
+	public ArrayList<Donjon> donjons = new ArrayList<Donjon>();
+	public static HashMap<Player, Donjon> indonjon = new HashMap<Player, Donjon>();
+	public HashMap<Player, RoomType> setroom_type = new HashMap<Player, RoomType>();
+	public HashMap<Player, Donjon> setroom_donjon = new HashMap<Player, Donjon>();
+	public HashMap<Player, String> setroom_name = new HashMap<Player, String>();
+	public HashMap<Player, Location> setroom_location = new HashMap<Player, Location>();
 	public Items items = new Items();
-	EffectManager effectmanager;
+	public EffectManager effectmanager;
 	ScoreboardManager manager;
-	Scoreboard board;
+	public Scoreboard board;
 	Quester quester;
 	public ArrayList<Player> arbalete = new ArrayList<Player>();
 	
 	@Override
 	public void onEnable() {
 		saveConfig();
-		getServer().getPluginManager().registerEvents(this, this);
+		getServer().getPluginManager().registerEvents(new InventoryListener(), this);
+		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+		getServer().getPluginManager().registerEvents(new AutoRebuildListener(), this);
+		getServer().getPluginManager().registerEvents(new DamageListener(), this);
+		getServer().getPluginManager().registerEvents(new NoDurabilityListener(), this);
+		getServer().getPluginManager().registerEvents(new NoExpListener(), this);
+		getServer().getPluginManager().registerEvents(new ScrollListener(), this);
+		getServer().getPluginManager().registerEvents(new NoBigTreesListener(), this);
 		loadDonjons();
 		
 		System.out.println("[RPG] Enable");
@@ -277,7 +252,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	//Conditions
 	
-	public boolean isInDonjon(Player p){
+	public static boolean isInDonjon(Player p){
 		if(indonjon.containsKey(p)){
 			return true;
 		}
@@ -393,9 +368,8 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		saveConfig();
 	}
-	
-	
-	//Fonctions à part
+
+	//Fonctions
 	
 	public void createCyl(Location loc, int r, Material mat) {
         int cx = loc.getBlockX();
@@ -444,54 +418,8 @@ public class Main extends JavaPlugin implements Listener {
 		
 	}
 
-	
-	//Events
 
-	@EventHandler
-	public void onTreeGrow(StructureGrowEvent e){
-		if (e.getSpecies() == TreeType.BIG_TREE){
-			e.setCancelled(true);
-		}
-	}
-	
-	@EventHandler
-	public void onPlayerMove(PlayerMoveEvent e) {
-		Player p = e.getPlayer();
-		Location from = e.getFrom();
-		Location to = e.getTo();
-		if(isInDonjon(p) == false){
-			for(int i = 0; i < donjons.size(); i++){
-				int radius = 2;
-				if ((from.getBlockX() != to.getBlockX()) || (from.getBlockZ() != to.getBlockZ())) {
-					if(getNearbyPlayers(donjons.get(i).getLocation(), radius).length >= 1) {
-						if(donjons.get(i).isActive()){
-							if(donjons.get(i).isOpen()){
-								donjons.get(i).setClose();
-								p.sendMessage("Ce tombeau sera votre tombeau!");
-								p.getWorld().playSound(donjons.get(i).getLocation(), Sound.WITHER_SPAWN, 1, 1);
-								indonjon.put(p, donjons.get(i));
-							}
-						}
-					}
-				}
-			}
-		}
-		if(isInDonjon(p)){
-			Donjon donj = indonjon.get(p);
-			for(int i = 0; i < donj.getRooms().size(); i++){
-				int radius = 2;
-				Room room = donj.getRooms().get(i);
-				if ((from.getBlockX() != to.getBlockX()) || (from.getBlockZ() != to.getBlockZ())) {
-					if(getNearbyPlayers(room.getLocation(), radius).length >= 1) {
-						if(room.getType() == RoomType.FIGHTROOM){
-							room.setClosed();
-						}
-					}
-				}
-			}
-		}
-	}
-	
+
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command command, String CommandLabel, String[] args){
 		Player p = (Player) sender;
@@ -858,609 +786,6 @@ public class Main extends JavaPlugin implements Listener {
 		return false;
 	}
 
-	@EventHandler 
-	public void onPlayerInteract(PlayerInteractEvent e){
-		Player p = e.getPlayer();
-		
-		if(e.getAction() == Action.RIGHT_CLICK_BLOCK){
-			if(isInDonjon(p)){
-				if(e.getPlayer().getItemInHand().getType().equals(Material.NAME_TAG) || e.getPlayer().getItemInHand().getType().equals(Material.TRIPWIRE_HOOK)){
-					Donjon donjon = indonjon.get(p);
-					if(e.getClickedBlock().getType().equals(Material.GOLD_BLOCK) || e.getClickedBlock().getType().equals(Material.IRON_BLOCK)){
-						for(int i = 0; i < donjon.getDoors().size(); i++){
-							if(donjon.getDoors().get(i).getType().equals(DoorType.KEY)  || donjon.getDoors().get(i).getType().equals(DoorType.BOSS) || donjon.getDoors().get(i).getType().equals(DoorType.FIGHTROOMKEY)){
-								Door door = donjon.getDoors().get(i);
-								if(door.getLock().equals(e.getClickedBlock().getLocation())){
-									List<String> lore = e.getItem().getItemMeta().getLore();
-									 if(lore.get(0).equals(donjon.getName())){
-										 if(lore.get(1).equals(donjon.getRoomByDoor(door).getName())){
-											 donjon.getDoors().get(i).setClose();
-											 donjon.getDoors().get(i).setOpen();
-										 }
-									 }
-								}
-							}
-						}
-					}
-				}
-			}
-			else if(setdonjon_name.containsKey(p)){
-				if(!setdoor.containsKey(p.getName() + 1)){
-					setdoor.put(p.getName() + 1, e.getClickedBlock().getLocation());
-					p.sendMessage("Le point 1 à été défini. Selectionne le point 2 à présent.");
-				}
-				else{
-					setdoor.put(p.getName() + 2, e.getClickedBlock().getLocation());
-					Door door = new Door(DoorType.DONJON, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), true);
-					setdoor.remove(p.getName() + 1);
-					setdoor.remove(p.getName() + 2);
-					Location loc = setdonjon_location.get(p);
-					String nom = setdonjon_name.get(p);
-					Donjon donj = new Donjon(loc, nom, door, false);
-					donjons.add(donj);
-					setdonjon_location.remove(p);
-					setdonjon_name.remove(p);
-					p.sendMessage("Donjon Created");
-					donj.setClose();
-				}
-			}
-			if(setroom_donjon.containsKey(p)){
-				Donjon donj = setroom_donjon.get(p);
-				String name = setroom_name.get(p);
-				RoomType type = setroom_type.get(p);
-				Location loc = setroom_location.get(p);
-				if(!setdoor.containsKey(p.getName() + 1)){
-					setdoor.put(p.getName() + 1, e.getClickedBlock().getLocation());
-					p.sendMessage("Le point 1 à été défini. Selectionne le point 2 à présent.");
-				}
-				else if (setdoor.containsKey(p.getName() + 1) && !setdoor.containsKey(p.getName() + 2)){
-					if(type == RoomType.FIGHTROOM || type == RoomType.ROOM || type == RoomType.REWARDROOM){
-						setdoor.put(p.getName() + 2, e.getClickedBlock().getLocation());
-						if(type == RoomType.FIGHTROOM){
-							Door door = new Door(DoorType.FIGHTROOM, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), true);
-							ArrayList<Door> doors = new ArrayList<Door>();
-							doors.add(door);
-							Room room = new Room(name, doors, loc, type);
-							donj.addRoom(room);
-							setdoor.remove(p.getName() + 1);
-							setdoor.remove(p.getName() + 2);
-							setroom_donjon.remove(p);
-							setroom_location.remove(p);
-							setroom_name.remove(p);
-							setroom_type.remove(p);
-							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-						}
-						else if(type == RoomType.ROOM){
-							Door door = new Door(DoorType.NORMAL, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), true);
-							ArrayList<Door> doors = new ArrayList<Door>();
-							doors.add(door);
-							Room room = new Room(name, doors, loc, type);
-							donj.addRoom(room);
-							setdoor.remove(p.getName() + 1);
-							setdoor.remove(p.getName() + 2);
-							setroom_donjon.remove(p);
-							setroom_location.remove(p);
-							setroom_name.remove(p);
-							setroom_type.remove(p);
-							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-						}
-						else if(type == RoomType.REWARDROOM){
-							Door door = new Door(DoorType.NORMAL, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), false);
-							ArrayList<Door> doors = new ArrayList<Door>();
-							doors.add(door);
-							Room room = new Room(name, doors, loc, type);
-							donj.addRoom(room);
-							setdoor.remove(p.getName() + 1);
-							setdoor.remove(p.getName() + 2);
-							setroom_donjon.remove(p);
-							setroom_location.remove(p);
-							setroom_name.remove(p);
-							setroom_type.remove(p);
-							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-						}
-					}
-					else{
-						setdoor.put(p.getName() + 2, e.getClickedBlock().getLocation());
-						p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, selectionne d'un clic droit le bloc qui fera office de serrure.");
-						
-					}
-				}
-				else if(setdoor.containsKey(p.getName() + 2)){
-					Location location = e.getClickedBlock().getLocation();
-					if(type == RoomType.REWARDROOMKEY){
-						Door door = new Door(DoorType.KEY, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), location, false);
-						ArrayList<Door> doors = new ArrayList<Door>();
-						doors.add(door);
-						Room room = new Room(name, doors, loc, type);
-						donj.addRoom(room);
-						setdoor.remove(p.getName() + 1);
-						setdoor.remove(p.getName() + 2);
-						setroom_donjon.remove(p);
-						setroom_location.remove(p);
-						setroom_name.remove(p);
-						setroom_type.remove(p);
-						p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-				
-					}
-					if(type == RoomType.ROOMKEY){
-						Door door = new Door(DoorType.KEY, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), location, false);
-						ArrayList<Door> doors = new ArrayList<Door>();
-						doors.add(door);
-						Room room = new Room(name, doors, loc, type);
-						donj.addRoom(room);
-						setdoor.remove(p.getName() + 1);
-						setdoor.remove(p.getName() + 2);
-						setroom_donjon.remove(p);
-						setroom_location.remove(p);
-						setroom_name.remove(p);
-						setroom_type.remove(p);
-						p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-					}
-					if(type == RoomType.FIGHTROOMKEY){
-						Door door = new Door(DoorType.FIGHTROOMKEY, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), location, false);
-						ArrayList<Door> doors = new ArrayList<Door>();
-						doors.add(door);
-						Room room = new Room(name, doors, loc, type);
-						donj.addRoom(room);
-						setdoor.remove(p.getName() + 1);
-						setdoor.remove(p.getName() + 2);
-						setroom_donjon.remove(p);
-						setroom_location.remove(p);
-						setroom_name.remove(p);
-						setroom_type.remove(p);
-						p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-					}
-					if(type == RoomType.BOSSROOM){
-						Door door = new Door(DoorType.BOSS, setdoor.get(p.getName() + 1), setdoor.get(p.getName() + 2), location, false);
-						ArrayList<Door> doors = new ArrayList<Door>();
-						doors.add(door);
-						Room room = new Room(name, doors, loc, type);
-						donj.addRoom(room);
-						setdoor.remove(p.getName() + 1);
-						setdoor.remove(p.getName() + 2);
-						setroom_donjon.remove(p);
-						setroom_location.remove(p);
-						setroom_name.remove(p);
-						setroom_type.remove(p);
-						p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La salle a été créée et a été ajoutée au donjon.");
-					}
-				}
-			}
-		}
-	}
-	
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	public void onBreakBlock(BlockBreakEvent e){
-		Material type = e.getPlayer().getItemInHand().getType();
-		if(type == Material.DIAMOND_AXE || type == Material.DIAMOND_HOE || type == Material.DIAMOND_SPADE || type == Material.DIAMOND_PICKAXE || type == Material.DIAMOND_SWORD
-			|| type == Material.IRON_AXE || type == Material.IRON_HOE || type == Material.IRON_PICKAXE || type == Material.IRON_SPADE || type == Material.IRON_SWORD
-			|| type == Material.WOOD_AXE || type == Material.WOOD_HOE || type == Material.WOOD_PICKAXE || type == Material.WOOD_SPADE || type == Material.WOOD_SWORD 
-			|| type == Material.STONE_AXE || type == Material.STONE_HOE || type == Material.STONE_PICKAXE || type == Material.STONE_SPADE || type == Material.STONE_SWORD
-			|| type == Material.GOLD_AXE || type == Material.GOLD_HOE || type == Material.GOLD_PICKAXE || type == Material.GOLD_SPADE || type == Material.GOLD_SWORD || type == Material.SHEARS){
-		e.getPlayer().getItemInHand().setDurability((short) 0);
-		e.getPlayer().updateInventory();
-		}
-		if(e.getPlayer().isOp()){
-			return;
-		}
-		
-		if(e.getBlock().getType() == Material.SAPLING){
-			e.setCancelled(true);
-		}
-		
-		else{
-			BlockInfo blockinfo = new BlockInfo(e.getBlock().getLocation(), e.getBlock().getType(), e.getBlock().getData());
-			final HashMap<Location, BlockInfo> blocks = new HashMap<Location, BlockInfo>();
-			final ArrayList<Location> blockslist = new ArrayList<Location>();
-			blocks.put(e.getBlock().getLocation(), blockinfo);
-			blockslist.add(e.getBlock().getLocation());
-			Bukkit.getScheduler().runTaskLater(this, new Runnable() {
-				
-				@Override
-				public void run() {
-					for(int i = 0; i < blockslist.size(); i++){
-						Location loc = blockslist.get(i);
-						BlockInfo bi = blocks.get(loc);
-						loc.getWorld().getBlockAt(loc).setType(bi.getType());
-						loc.getWorld().getBlockAt(loc).setData(bi.getDataValue());
-					}
-					
-				}
-			}, 600L);
-		}
-	}
-	
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	public void onEntityExplode(EntityExplodeEvent e) {
-		final ArrayList<Location> blockslist = new ArrayList<Location>();
-		final HashMap<Location, BlockInfo> blocks = new HashMap<Location, BlockInfo>();
-		for(int i = 0; i < e.blockList().size(); i++){
-			Block bl = e.blockList().get(i);
-			BlockInfo bi = new BlockInfo(bl.getLocation(), bl.getType(), bl.getData());
-			blocks.put(bl.getLocation(), bi);
-			blockslist.add(bl.getLocation());
-		}
-		Bukkit.getScheduler().runTaskLater(this, new Runnable() {
-			
-			@Override
-			public void run() {
-				for(int i = 0; i < blockslist.size(); i++){
-					Location loc = blockslist.get(i);
-					BlockInfo bi = blocks.get(loc);
-					loc.getWorld().getBlockAt(loc).setType(bi.getType());
-					loc.getWorld().getBlockAt(loc).setData(bi.getDataValue());
-				}
-				
-			}
-		}, 600L);
-		  
-		}
-
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	public void onPlayerInteract2(final PlayerInteractEvent e){
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_1)){
-			WarpEntityEffect effect = new WarpEntityEffect(effectmanager, e.getPlayer());
-			effect.start();
-			double x = getConfig().getDouble(getRace(e.getPlayer()).toLowerCase() + "s.x");
-			double y = getConfig().getDouble(getRace(e.getPlayer()).toLowerCase() + "s.y");
-			double z = getConfig().getDouble(getRace(e.getPlayer()).toLowerCase() + "s.z");
-			float yaw = getConfig().getInt(getRace(e.getPlayer()).toLowerCase() + "s.yaw");
-			float pitch = getConfig().getInt(getRace(e.getPlayer()).toLowerCase() + "s.pitch");
-			Location loc = new Location(e.getPlayer().getWorld(), x, y, z, yaw, pitch);
-			e.getPlayer().teleport(loc);
-			e.setCancelled(true);
-			e.getPlayer().updateInventory();
-			effect.start();
-		}
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_2)){
-			Fireball fire = e.getPlayer().launchProjectile(Fireball.class);
-			e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 10, 1000));
-			e.setCancelled(true);
-			e.getPlayer().updateInventory();
-			fire.setVelocity(e.getPlayer().getLocation().getDirection().multiply(3));
-		}
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_3)){
-			List<Entity> entitylist = e.getPlayer().getNearbyEntities(8, 8, 8);
-			for(int i = 0; i < entitylist.size(); i++){
-				if(entitylist.get(i) instanceof LivingEntity){
-					LivingEntity en = (LivingEntity) entitylist.get(i);
-					en.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 250, 0));
-					WarpEntityEffect effect = new WarpEntityEffect(effectmanager, e.getPlayer());
-					effect.particle = ParticleEffect.ANGRY_VILLAGER;
-					effect.start();
-				}
-			}
-			e.setCancelled(true);
-			e.getPlayer().updateInventory();
-		}
-		
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_4)){
-			e.setCancelled(true);
-			e.getPlayer().updateInventory();
-			final Location loc = e.getPlayer().getLocation();
-			final int id = Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
-				int radius = 3;
-				
-				@Override
-				public void run() {
-					createCyl(loc, radius, Material.FIRE);
-					createCyl(loc, radius-1, Material.AIR);
-					radius ++;
-				}
-			}, 0L, 10L).getTaskId();
-			Bukkit.getScheduler().runTaskLater(this, new Runnable() {
-				
-				@Override
-				public void run() {
-					createCyl(loc, 3 + 5, Material.AIR);
-					Bukkit.getScheduler().cancelTask(id);
-				}
-			}, 50L);
-		    }
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_5)){
-			e.setCancelled(true);;
-			e.getPlayer().updateInventory();
-			List<Entity> entitylist = e.getPlayer().getNearbyEntities(5, 5, 5);
-			for(int i = 0; i < entitylist.size(); i++){
-					entitylist.get(i).setVelocity(new Vector(0.0, 1.0, 0.0));
-					Location loc = e.getPlayer().getLocation();
-			        e.getPlayer().getWorld().playEffect(loc, Effect.STEP_SOUND, Material.DIRT);
-			}
-		}
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_6)){
-			e.setCancelled(true);;
-			e.getPlayer().updateInventory();
-			e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 2));
-			InvisibilityEffect effect = new InvisibilityEffect(effectmanager, e.getPlayer().getLocation());
-			effect.visibleRange = 10;
-			effect.start();
-		}
-		if(e.getPlayer().getItemInHand().getItemMeta().equals(items.m_parchemin_7)){
-			e.getPlayer().setHealth(20);
-			e.getPlayer().setFoodLevel(20);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(0.0, 2.0, 0.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(1.0, 0.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(0.0, 0.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(1.0, 0.0, 0.0), 10);
-
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(1.0, 0.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(0.0, 0.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(1.0, 0.0, 0.0), 10);
-			
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(0.0, 2.0, 0.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(1.0, 1.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(0.0, 1.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().add(1.0, 1.0, 0.0), 10);
-
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(1.0, -1.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(0.0, -1.0, 1.0), 10);
-			ParticleEffect.HEART.display(e.getPlayer().getLocation().subtract(1.0, -1.0, 0.0), 10);
-			
-			e.setCancelled(true);
-			e.getPlayer().updateInventory();
-		}
-		
-	}
-	
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	public void onDamageEntity(EntityDamageByEntityEvent e){
-		if(e.getDamager() instanceof Arrow){
-			Arrow a = (Arrow) e.getDamager();
-			if(a.getShooter() instanceof Player){
-				Player p = (Player) a.getShooter();
-				if(p.getItemInHand().equals(items.arbalete)){
-					e.setDamage(8);
-				}
-			}
-		}
-		if(e.getDamager() instanceof Fireball){
-			Fireball a = (Fireball) e.getDamager();
-			if(a.getShooter() instanceof Player){
-				Player p = (Player) a.getShooter();
-				if(p.getItemInHand().equals(items.m_parchemin_2)){
-					if(p != e.getEntity()){
-						e.setDamage(6);
-					}
-				}
-			}
-		}
-		if(e.getDamager() instanceof Player){
-			Material type = ((Player) e.getDamager()).getItemInHand().getType();
-			Player p = (Player) e.getDamager();
-			if(type == Material.DIAMOND_AXE || type == Material.DIAMOND_HOE || type == Material.DIAMOND_SPADE || type == Material.DIAMOND_PICKAXE || type == Material.DIAMOND_SWORD
-					|| type == Material.IRON_AXE || type == Material.IRON_HOE || type == Material.IRON_PICKAXE || type == Material.IRON_SPADE || type == Material.IRON_SWORD
-					|| type == Material.WOOD_AXE || type == Material.WOOD_HOE || type == Material.WOOD_PICKAXE || type == Material.WOOD_SPADE || type == Material.WOOD_SWORD 
-					|| type == Material.STONE_AXE || type == Material.STONE_HOE || type == Material.STONE_PICKAXE || type == Material.STONE_SPADE || type == Material.STONE_SWORD
-					|| type == Material.GOLD_AXE || type == Material.GOLD_HOE || type == Material.GOLD_PICKAXE || type == Material.GOLD_SPADE || type == Material.GOLD_SWORD || type == Material.SHEARS){
-			p.getItemInHand().setDurability((short) 0);;
-			}
-			p.updateInventory();
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	public void onPlayerDrop(PlayerDropItemEvent e){
-		if(e.getPlayer().isOp()){
-			return;
-		}
-		e.setCancelled(true);
-		e.getPlayer().updateInventory();
-	}
-	
-	@SuppressWarnings("deprecation")
-	@EventHandler
-	
-	public void onInventoryClick(InventoryClickEvent e){
-		Player p = (Player) e.getWhoClicked();
-		if(e.getInventory().equals(p.getInventory())){
-			if(e.getSlot() == 7 || e.getSlot() == 8){
-				p.updateInventory();
-				e.setCancelled(true);
-				p.closeInventory();
-				p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Ces items ne peuvent pas être déplacés!");
-			}
-		}
-		
-		if(ChatColor.stripColor(e.getInventory().getName()).equalsIgnoreCase("Selectionne ta race")){
-			e.setCancelled(true);
-		if(e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR || !e.getCurrentItem().hasItemMeta()){
-			p.closeInventory();
-			return;
-		}
-			
-		switch(e.getCurrentItem().getType()){
-		case BOOK: 
-			p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.AQUA + " Tu as choisi la race humain! Bienvenue dans le royaume!");
-			p.closeInventory();
-			double x = (double) getConfig().get("humains.x");
-			double y = (double) getConfig().get("humains.y");
-			double z = (double) getConfig().get("humains.z");
-			String w = (String) getConfig().get("humains.w");
-			float yaw = getConfig().getInt("humains.yaw");
-			float pitch = getConfig().getInt("humains.pitch");
-			Location location = new Location(Bukkit.getWorld(w), x, y, z, yaw, pitch);
-			p.getInventory().setItem(7, items.parchemin_1);
-			String path = "users." + p.getName();
-			getConfig().set(path + ".race", "Humain");
-			getConfig().set(path + ".level", 1);
-			getConfig().set(path + ".experience", 0);
-			getConfig().set(path + ".argent", 100);
-			saveConfig();
-			p.teleport(location);
-			Objective race = board.registerNewObjective("Tu es un " + getRace(p), "dummy");
-			Score score = race.getScore(p);
-			score.setScore(0);
-			
-			
-			break;
-		case IRON_PICKAXE: 
-			p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.AQUA + " Tu as choisi la race nain! Bienvenue à la mine!");
-			p.closeInventory();
-			double x1 = (double) getConfig().get("nains.x");
-			double y1 = (double) getConfig().get("nains.y");
-			double z1 = (double) getConfig().get("nains.z");			
-			float yaw1 = getConfig().getInt("nains.yaw");
-			float pitch1 = getConfig().getInt("nains.pitch");
-			p.getInventory().setItem(7, items.parchemin_1);
-			String path1 = "users." + p.getName();
-			getConfig().set(path1 + ".race", "Nain");
-			getConfig().set(path1 + ".level", 1);
-			getConfig().set(path1 + ".experience", 0);
-			getConfig().set(path1 + ".argent", 100);
-			saveConfig();
-			String w1 = getConfig().getString("nains.w");
-			Location location1 = new Location(Bukkit.getWorld(w1), x1, y1, z1, yaw1, pitch1);
-			p.teleport(location1);
-			break;
-		case STONE_SWORD: 
-			p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.AQUA + " Tu as choisi la race orc! Bienvenue dans le volcan!");
-			p.closeInventory();
-			double x2 = (double) getConfig().get("orcs.x");
-			double y2 = (double) getConfig().get("orcs.y");
-			double z2 = (double) getConfig().get("orcs.z");
-			float yaw2 = getConfig().getInt("orcs.yaw");
-			float pitch2 = getConfig().getInt("orcs.pitch");
-			String w2 = (String) getConfig().get("orcs.w");
-			p.getInventory().setItem(7, items.parchemin_1);
-			Location location2 = new Location(Bukkit.getWorld(w2), x2, y2, z2, yaw2, pitch2);
-			String path2 = "users." + p.getName();
-			getConfig().set(path2 + ".race", "Orc");
-			getConfig().set(path2 + ".level", 1);
-			getConfig().set(path2 + ".experience", 0);
-			getConfig().set(path2 + ".argent", 100);
-			saveConfig();
-			p.teleport(location2);
-			break;
-		case BOW: 
-			p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.AQUA + " Tu as choisi la race elfe! Bienvenue dans la forêt!");
-			p.closeInventory();
-			double x3 = (double) getConfig().get("elfes.x");
-			double y3 = (double) getConfig().get("elfes.y");
-			double z3 = (double) getConfig().get("elfes.z");
-			String w3 = (String) getConfig().get("elfes.w");
-			p.getInventory().setItem(7, items.parchemin_1);
-			float yaw3 = getConfig().getInt("elfes.yaw");
-			float pitch3 = getConfig().getInt("elfes.pitch");
-			String path3 = "users." + p.getName();
-			getConfig().set(path3 + ".race", "Elfe");
-			getConfig().set(path3 + ".level", 1);
-			getConfig().set(path3 + ".experience", 0);
-			getConfig().set(path3 + ".argent", 100);
-			saveConfig();
-			Location location3 = new Location(Bukkit.getWorld(w3), x3, y3, z3, yaw3, pitch3);
-			p.teleport(location3);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-	@SuppressWarnings("deprecation")
-	@EventHandler 
-	public void onPlayerShot(EntityShootBowEvent e){
-		if(!(e.getEntity() instanceof Player)){
-			return;
-		}
-		Player p = (Player) e.getEntity();
-		p.getItemInHand().setDurability((short) 0);
-		p.updateInventory();
-	}
-	
-	//NO Exp ORBS DROP
-	
-	@EventHandler
-	public void onBlockExp(BlockExpEvent e)
-	  {
-	    e.setExpToDrop(0);
-	  }
-	  
-	@EventHandler
-	public void onDeath(EntityDeathEvent e)
-	  {
-	    e.setDroppedExp(0);
-	  }
-	  
-	@EventHandler
-	public void onFurnace(FurnaceExtractEvent e)
-	  {
-	    e.setExpToDrop(0);
-	  }
-	  
-	@EventHandler(priority=EventPriority.HIGHEST)
-	public void onEntitySpawn(ItemSpawnEvent event)
-	  {
-	    Entity entity = event.getEntity();
-	    if ((entity instanceof ExperienceOrb)) {
-	      event.setCancelled(true);
-	    }
-	  }
-	  
-	@EventHandler
-	public void onPickup(PlayerPickupItemEvent e)
-	  {
-	    if ((e.getItem() instanceof ExperienceOrb))
-	    {
-	      e.getItem().remove();
-	      e.setCancelled(true);
-	    }
-	  }
-	  
-	@EventHandler
-	public void onFish(PlayerFishEvent e)
-	  {
-	    e.setExpToDrop(0);
-	  }
-	
-	@EventHandler
-	public void onJoin(PlayerJoinEvent e){
-		Player p = e.getPlayer();
-		Objective obj = board.registerNewObjective(p.getName(), "dummy");
-		obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-		
-		Score espace = obj.getScore(Bukkit.getOfflinePlayer("----------------"));
-		espace.setScore(7);
-		
-		Score race = obj.getScore(Bukkit.getOfflinePlayer(ChatColor.GREEN + "Race: " + getRace(p)));
-		race.setScore(6);
-		
-		Score level = obj.getScore(Bukkit.getOfflinePlayer(ChatColor.AQUA + "Level:  " + getLevel(p)));
-		level.setScore(5);
-		
-		Score exp = obj.getScore(Bukkit.getOfflinePlayer(ChatColor.GOLD + "Experience:  " + getExp(p)));
-		exp.setScore(4);
-		
-		Score argent = obj.getScore(Bukkit.getOfflinePlayer(ChatColor.YELLOW + "Argent:  " + getMoney(p)));
-		argent.setScore(3);
-		
-		Score espace1 = obj.getScore(Bukkit.getOfflinePlayer(" "));
-		espace1.setScore(2);
-		
-		Score queste = obj.getScore(Bukkit.getOfflinePlayer(ChatColor.BLUE + "Quête: "));
-		queste.setScore(1);
-		
-		if (Quester.qMan.getPlayerQuest(p.getName()).getName().length() > 16){
-			String questname = Quester.qMan.getPlayerQuest(p.getName()).getName().substring(0, 16);
-			Score quest = obj.getScore(Bukkit.getOfflinePlayer(questname));
-			quest.setScore(0);
-		}
-		else{
-		Score quest = obj.getScore(Bukkit.getOfflinePlayer(Quester.qMan.getPlayerQuest(p.getName()).getName()));
-		quest.setScore(0);
-		}
-		p.setScoreboard(board);
-	}
-	
-	@EventHandler
-	public void onQuit(PlayerQuitEvent e){
-		Player p = e.getPlayer();
-		board.getObjective(p.getName()).unregister();
-	}
 
 	  
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
