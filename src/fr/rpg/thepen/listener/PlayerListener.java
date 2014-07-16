@@ -23,10 +23,12 @@ import fr.rpg.thepen.Room;
 import fr.rpg.thepen.RoomType;
 
 public class PlayerListener implements Listener{
-
-	public static Main main;
-	public Items items = main.items;
-	
+	private Main main;
+	@SuppressWarnings("unused")
+    private Items items = main.items;
+	public PlayerListener(Main main){
+		this.main = main;
+	}
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent e) {
 		Player p = e.getPlayer();

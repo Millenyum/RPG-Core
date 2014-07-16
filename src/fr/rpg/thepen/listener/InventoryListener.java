@@ -16,10 +16,11 @@ import fr.rpg.thepen.Items;
 import fr.rpg.thepen.Main;
 
 public class InventoryListener implements Listener{
-
-	Main main;
-	Items items = main.items;
-	
+	private Main main;
+	private Items items = main.items;
+	public InventoryListener(Main main){
+		this.main = main;
+	}
 	public FileConfiguration getConfig(){
 		return main.getConfig();
 	}

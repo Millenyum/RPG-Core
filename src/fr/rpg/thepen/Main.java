@@ -7,21 +7,21 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-<<<<<<< HEAD
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
-=======
->>>>>>> ec51ad91803f1b43a1221818d2237229dfcc7bb6
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-<<<<<<< HEAD
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExpEvent;
@@ -38,24 +38,26 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-=======
->>>>>>> ec51ad91803f1b43a1221818d2237229dfcc7bb6
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.util.Vector;
 
 import com.gmail.molnardad.quester.Quester;
 
 import de.slikey.effectlib.EffectLib;
 import de.slikey.effectlib.EffectManager;
-<<<<<<< HEAD
 import de.slikey.effectlib.effect.WarpEntityEffect;
 import de.slikey.effectlib.util.ParticleEffect;
-=======
 import fr.rpg.thepen.listener.AutoRebuildListener;
 import fr.rpg.thepen.listener.DamageListener;
 import fr.rpg.thepen.listener.InventoryListener;
@@ -64,7 +66,7 @@ import fr.rpg.thepen.listener.NoDurabilityListener;
 import fr.rpg.thepen.listener.NoExpListener;
 import fr.rpg.thepen.listener.PlayerListener;
 import fr.rpg.thepen.listener.ScrollListener;
->>>>>>> ec51ad91803f1b43a1221818d2237229dfcc7bb6
+
 
 public class Main extends JavaPlugin implements Listener {
 	
@@ -88,14 +90,14 @@ public class Main extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable() {
 		saveConfig();
-		getServer().getPluginManager().registerEvents(new InventoryListener(), this);
-		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-		getServer().getPluginManager().registerEvents(new AutoRebuildListener(), this);
-		getServer().getPluginManager().registerEvents(new DamageListener(), this);
-		getServer().getPluginManager().registerEvents(new NoDurabilityListener(), this);
-		getServer().getPluginManager().registerEvents(new NoExpListener(), this);
-		getServer().getPluginManager().registerEvents(new ScrollListener(), this);
-		getServer().getPluginManager().registerEvents(new NoBigTreesListener(), this);
+		getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
+		getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+		getServer().getPluginManager().registerEvents(new AutoRebuildListener(this), this);
+		getServer().getPluginManager().registerEvents(new DamageListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoDurabilityListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoExpListener(this), this);
+		getServer().getPluginManager().registerEvents(new ScrollListener(this), this);
+		getServer().getPluginManager().registerEvents(new NoBigTreesListener(this), this);
 		loadDonjons();
 		
 		System.out.println("[RPG] Enable");
@@ -447,13 +449,6 @@ public class Main extends JavaPlugin implements Listener {
 		player.openInventory(inv);
 		
 	}
-<<<<<<< HEAD
-	
-=======
-
-
-
->>>>>>> ec51ad91803f1b43a1221818d2237229dfcc7bb6
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args){
 		Player p = (Player) sender;
@@ -822,7 +817,6 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		return false;
 	}
-<<<<<<< HEAD
 	@EventHandler 
 	public void onPlayerInteract(PlayerInteractEvent e){
 		Player p = e.getPlayer();
@@ -1346,7 +1340,7 @@ public class Main extends JavaPlugin implements Listener {
 	    e.setExpToDrop(0);
 	  }
 	  
-	@EventHandler(priority=EventPriority.HIGHEST)
+	@EventHandler()
 	public void onEntitySpawn(ItemSpawnEvent event)
 	  {
 	    Entity entity = event.getEntity();
@@ -1416,9 +1410,6 @@ public class Main extends JavaPlugin implements Listener {
 		Player p = e.getPlayer();
 		board.getObjective(p.getName()).unregister();
 	}
-=======
-
->>>>>>> ec51ad91803f1b43a1221818d2237229dfcc7bb6
 
 	  
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

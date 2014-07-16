@@ -17,8 +17,10 @@ import fr.rpg.thepen.BlockInfo;
 import fr.rpg.thepen.Main;
 
 public class AutoRebuildListener implements Listener{
-	public Main main;
-	
+	private Main main;
+	public AutoRebuildListener(Main main){
+		this.main = main;
+	}
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onBreakBlock(BlockBreakEvent e){

@@ -1,13 +1,7 @@
 package fr.rpg.thepen;
 
-import java.awt.List;
-import java.util.ArrayList;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 
 public class Door {
 
@@ -45,7 +39,8 @@ public class Door {
 	}
 	
 	//Actions
-	public void setClose(){
+	@SuppressWarnings("deprecation")
+    public void setClose(){
 		for(int x = (int) Math.min(corner1.getX(), corner2.getX()); x <= (int)Math.max(corner1.getX(), corner2.getX()); x++){
 			for(int y = (int) Math.min(corner1.getY(), corner2.getY()); y <= (int)Math.max(corner1.getY(), corner2.getY()); y++){
 				for(int z = (int) Math.min(corner1.getZ(), corner2.getZ()); z <= (int)Math.max(corner1.getZ(), corner2.getZ()); z++){

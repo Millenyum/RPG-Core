@@ -23,11 +23,11 @@ import fr.rpg.thepen.Items;
 import fr.rpg.thepen.Main;
 
 public class ScrollListener implements Listener{
-
-	public static Main main;
-	public Items items = main.items;
-	
-	
+	private Main main;
+	private Items items = main.items;
+	public ScrollListener(Main main){
+		this.main = main;
+	}
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onPlayerInteract2(final PlayerInteractEvent e){

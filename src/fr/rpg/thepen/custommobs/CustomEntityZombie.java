@@ -1,5 +1,9 @@
 package fr.rpg.thepen.custommobs;
 
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_7_R3.CraftWorld;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+
 import net.minecraft.server.v1_7_R3.EntityZombie;
 import net.minecraft.server.v1_7_R3.GenericAttributes;
 import net.minecraft.server.v1_7_R3.World;
@@ -22,6 +26,40 @@ public class CustomEntityZombie extends EntityZombie {
 	}
     public CustomEntityZombie(World world){
         super(world);
+    }
+    /**
+     * Faire spawner un zombie sans nom sur la position
+     * @param pos La position
+     * @return Le zombie
+     */
+    public static CustomEntityZombie spawnZombie(Location pos){
+    	return CustomEntityZombie.spawnZombie(pos, "");
+    }
+    /**
+     * Faire spawner un zombie sur une position avec un nom défini
+     * @param pos La position
+     * @param name Le nom du zombie
+     * @return Le zombie
+     */
+    public static CustomEntityZombie spawnZombie(Location pos, String name){
+    	return CustomEntityZombie.spawnZombie(((CraftWorld)pos.getWorld()).getHandle(), pos.getX(), pos.getY(), pos.getZ(), pos.getYaw(), pos.getPitch(), name);
+    }
+    /**
+     * Faire spawner un zombie sur une position absolue avec un nom défini
+     * @param nmsWorld Le monde, sous forme NMS
+     * @param x Position X
+     * @param y Y
+     * @param z Z
+     * @param yaw Le yaw en degres
+     * @param pitch Le pitch
+     * @param name Le nom
+     * @return Le zombie
+     */
+    public static CustomEntityZombie spawnZombie(World nmsWorld, double x, double y, double z, float yaw, float pitch, String name){
+    	CustomEntityZombie cez = new CustomEntityZombie(nmsWorld, name);
+    	cez.setLocation(x, y, z, yaw, pitch);
+    	nmsWorld.addEntity(cez, SpawnReason.CUSTOM);
+    	return cez;
     }
     /**
      * Definir la vie maximale du zombie
