@@ -4,9 +4,17 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
  
+
+
+
+
 import net.minecraft.server.v1_7_R1.BiomeBase;
 import net.minecraft.server.v1_7_R1.BiomeMeta;
+import net.minecraft.server.v1_7_R1.EntityCaveSpider;
+import net.minecraft.server.v1_7_R1.EntityCow;
 import net.minecraft.server.v1_7_R1.EntityInsentient;
+import net.minecraft.server.v1_7_R1.EntitySkeleton;
+import net.minecraft.server.v1_7_R1.EntitySpider;
 import net.minecraft.server.v1_7_R1.EntityTypes;
 import net.minecraft.server.v1_7_R1.EntityZombie;
 
@@ -14,7 +22,11 @@ import org.bukkit.entity.EntityType;
  
 public enum CustomEntityType {
  
-ZOMBIE("Zombie", 54, EntityType.ZOMBIE, EntityZombie.class, CustomEntityZombie.class);
+ZOMBIE("Zombie", 54, EntityType.ZOMBIE, EntityZombie.class, CustomEntityZombie.class),
+SKELETON("Skeleton", 51, EntityType.SKELETON, EntitySkeleton.class, CustomEntitySkeleton.class),
+SPIDER("Spider", 52, EntityType.SPIDER, EntitySpider.class, CustomEntitySpider.class),
+CAVESPIDER("CaveSpider", 59, EntityType.CAVE_SPIDER, EntityCaveSpider.class, CustomEntityCaveSpider.class),
+COW("Cow", 92, EntityType.COW, EntityCow.class, CustomEntityCow.class);
  
 private String name;
 private int id;

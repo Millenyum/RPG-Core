@@ -3,13 +3,15 @@ package fr.rpg.thepen.custommobs;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_7_R1.CraftWorld;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-import net.minecraft.server.v1_7_R1.EntityZombie;
+
+import net.minecraft.server.v1_7_R1.EntitySilverfish;
 import net.minecraft.server.v1_7_R1.GenericAttributes;
 import net.minecraft.server.v1_7_R1.World;
 
-public class CustomEntityZombie extends EntityZombie {
+public class CustomEntitySilverfish extends EntitySilverfish{
+	
 	private double speed = 0.7, maxHealth = 20D, knockbackRes = 0D, followRange = 32D, strength = 2D;
-	public CustomEntityZombie(World w, String s){
+	public CustomEntitySilverfish(World w, String s){
 		this(w);
 		this.setCustomName(s);
 		this.setCustomNameVisible(false);//<-- Rendre le nom visible
@@ -23,20 +25,20 @@ public class CustomEntityZombie extends EntityZombie {
 	    this.getAttributeInstance(GenericAttributes.d).setValue(speed);
 	    this.getAttributeInstance(GenericAttributes.e).setValue(strength);
 	}
-    public CustomEntityZombie(World world){
+    public CustomEntitySilverfish(World world){
         super(world);
     }
     
-    public CustomEntityZombie spawn(Location pos){
-    	return CustomEntityZombie.spawn(pos, "");
+    public static CustomEntitySilverfish spawn(Location pos){
+    	return CustomEntitySilverfish.spawn(pos, "");
     }
 
-    public static CustomEntityZombie spawn(Location pos, String name){
-    	return CustomEntityZombie.spawn(((CraftWorld)pos.getWorld()).getHandle(), pos.getX(), pos.getY(), pos.getZ(), pos.getYaw(), pos.getPitch(), name);
+    public static CustomEntitySilverfish spawn(Location pos, String name){
+    	return CustomEntitySilverfish.spawn(((CraftWorld)pos.getWorld()).getHandle(), pos.getX(), pos.getY(), pos.getZ(), pos.getYaw(), pos.getPitch(), name);
     }
     
-    public static CustomEntityZombie spawn(World nmsWorld, double x, double y, double z, float yaw, float pitch, String name){
-    	CustomEntityZombie cez = new CustomEntityZombie(nmsWorld, name);
+    public static CustomEntitySilverfish spawn(World nmsWorld, double x, double y, double z, float yaw, float pitch, String name){
+    	CustomEntitySilverfish cez = new CustomEntitySilverfish(nmsWorld, name);
     	cez.setLocation(x, y, z, yaw, pitch);
     	nmsWorld.addEntity(cez, SpawnReason.CUSTOM);
     	return cez;
@@ -74,3 +76,4 @@ public class CustomEntityZombie extends EntityZombie {
     	this.aD();
     }
 }
+

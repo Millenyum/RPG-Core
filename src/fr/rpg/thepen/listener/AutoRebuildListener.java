@@ -31,29 +31,6 @@ public class AutoRebuildListener implements Listener{
 				e.setCancelled(true);
 			}
 		}
-		
-		else{
-			if(p.isOp()){
-				BlockInfo blockinfo = new BlockInfo(e.getBlock().getLocation(), e.getBlock().getType(), e.getBlock().getData());
-				final HashMap<Location, BlockInfo> blocks = new HashMap<Location, BlockInfo>();
-				final ArrayList<Location> blockslist = new ArrayList<Location>();
-				blocks.put(e.getBlock().getLocation(), blockinfo);
-				blockslist.add(e.getBlock().getLocation());
-				Bukkit.getScheduler().runTaskLater(main, new Runnable() {
-				
-					@Override
-					public void run() {
-						for(int i = 0; i < blockslist.size(); i++){
-							Location loc = blockslist.get(i);
-							BlockInfo bi = blocks.get(loc);
-							loc.getWorld().getBlockAt(loc).setType(bi.getType());
-							loc.getWorld().getBlockAt(loc).setData(bi.getDataValue());
-						}
-					
-					}
-				}, 600L);
-			}
-		}
 	}
 
 	@SuppressWarnings("deprecation")

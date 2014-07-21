@@ -1,5 +1,7 @@
 package fr.rpg.thepen;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,57 +9,32 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.ExperienceOrb;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockExpEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
-import org.bukkit.event.inventory.FurnaceExtractEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerFishEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
-import org.bukkit.util.Vector;
 
 import com.gmail.molnardad.quester.Quester;
 
 import de.slikey.effectlib.EffectLib;
 import de.slikey.effectlib.EffectManager;
-import de.slikey.effectlib.effect.WarpEntityEffect;
-import de.slikey.effectlib.util.ParticleEffect;
+import fr.rpg.thepen.custommobs.CustomEntityPattern;
+import fr.rpg.thepen.custommobs.CustomEntityType;
+import fr.rpg.thepen.custommobs.CustomMobType;
+import fr.rpg.thepen.custommobs.ZombieType;
 import fr.rpg.thepen.listener.AutoRebuildListener;
 import fr.rpg.thepen.listener.DamageListener;
 import fr.rpg.thepen.listener.InventoryListener;
@@ -69,7 +46,7 @@ import fr.rpg.thepen.listener.ScrollListener;
 
 
 public class Main extends JavaPlugin implements Listener {
-	
+
 	ArrayList<Player> setters = new ArrayList<Player>();
 	public HashMap<Player, String> setdonjon_name = new HashMap<Player, String>();
 	public HashMap<Player, Location> setdonjon_location = new HashMap<Player, Location>();
@@ -80,13 +57,16 @@ public class Main extends JavaPlugin implements Listener {
 	public HashMap<Player, Donjon> setroom_donjon = new HashMap<Player, Donjon>();
 	public HashMap<Player, String> setroom_name = new HashMap<Player, String>();
 	public HashMap<Player, Location> setroom_location = new HashMap<Player, Location>();
+	public ArrayList<CustomEntityPattern> mobs = new ArrayList<CustomEntityPattern>();
 	public static Items items;
 	public EffectManager effectmanager;
 	ScoreboardManager manager;
 	public Scoreboard board;
 	Quester quester;
 	public ArrayList<Player> arbalete = new ArrayList<Player>();
-	
+	File fichierConfig = new File("/plugins/RPG-Core/donjons.yml");
+	FileConfiguration dconfig = YamlConfiguration.loadConfiguration(fichierConfig);
+
 	@Override
 	public void onEnable() {
 		items = new Items();
@@ -100,61 +80,88 @@ public class Main extends JavaPlugin implements Listener {
 		getServer().getPluginManager().registerEvents(new ScrollListener(this), this);
 		getServer().getPluginManager().registerEvents(new NoBigTreesListener(this), this);
 		loadDonjons();
-		
+
 		System.out.println("[RPG] Enable");
 		Bukkit.getServer().getPluginManager().registerEvents(this, this);	
 		setupItems();
-		 EffectLib lib = EffectLib.instance();
-		 effectmanager = new EffectManager(lib);
-		 manager = Bukkit.getScoreboardManager();
-		 board = manager.getNewScoreboard();
-		 setupQuester();
-		 
-		 Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
-			
+		EffectLib lib = EffectLib.instance();
+		effectmanager = new EffectManager(lib);
+		manager = Bukkit.getScoreboardManager();
+		board = manager.getNewScoreboard();
+		setupQuester();
+		CustomEntityType.registerEntities();
+		Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
+
 			@Override
 			public void run() {
 				for(int i = 0; i < Bukkit.getServer().getOnlinePlayers().length; i++){
 					Player p = Bukkit.getServer().getOnlinePlayers()[i];
 					if(p.getLevel() < 100){
-						p.setLevel(p.getLevel() + 1);
+						if(p.hasPermission("rpg.vip")){
+							p.setLevel(p.getLevel() + 2);
+						}
+						else{
+							p.setLevel(p.getLevel() + 1);
+						}
 					}
 				}
-				
+
 			}
-		}, 0, 20);
+		}, 0, 40);
 	}
 
 	@Override
 	public void onDisable() {
 		if(!donjons.isEmpty()){
-		saveDonjons();
+			saveDonjons();
 		}
 		saveConfig();
+		CustomEntityType.unregisterEntities();
 	}
 
+
 	//Getters
+
+	public boolean isAlreadyExisting(String name){
+		for(int i = 0; i < mobs.size(); i++){
+			CustomEntityPattern pattern = mobs.get(i);
+			if(pattern.getName().equals(name)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public CustomEntityPattern getCustomEntityByName(String name){
+		for(int i = 0; i < mobs.size(); i++){
+			CustomEntityPattern pattern = mobs.get(i);
+			if(pattern.getName().equals(name)){
+				return pattern;
+			}
+		}
+		return null;
+	}
 	
 	public String getRace(Player p){
 		return (String) getConfig().get("users." + p.getName() + ".race");
 	}
-	
+
 	public int getLevel(Player p){
 		return getConfig().getInt("users." + p.getName() + ".level");
 	}
-	
+
 	public int getExp(Player p){
 		return getConfig().getInt("users." + p.getName() + ".experience");
 	}
-	
+
 	public int getMoney(Player p){
 		return getConfig().getInt("users." + p.getName() + ".argent");
 	}
-	
+
 	public int getMana(Player p){
 		return p.getLevel();
 	}
-	
+
 	public Donjon getDonjonByName(String name){
 		for(int i = 0; i < donjons.size(); i++){
 			Donjon donj1 = donjons.get(i);
@@ -173,7 +180,7 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		return names;
 	}
-	
+
 	public static Player[] getNearbyPlayers(Location l, int radius){
 		int chunkRadius = radius < 16 ? 1 : (radius - (radius % 16))/16;
 		HashSet<Player> radiusPlayers = new HashSet<Player>();
@@ -192,49 +199,49 @@ public class Main extends JavaPlugin implements Listener {
 		}
 		return radiusPlayers.toArray(new Player[radiusPlayers.size()]);
 	}
-	
+
 	//Setters
-	
+
 	public void setMana(Player p, int level){
 		p.setLevel(level);
 	}
-	
+
 	//Setups
-	
+
 	public void setupItems(){
-		
+
 		items.m_arbalete.setDisplayName(ChatColor.DARK_AQUA + "Arbalète");
 		items.arbalete.setItemMeta(items.m_arbalete);
-		
+
 		items.m_carreau.setDisplayName(ChatColor.DARK_RED + "Carreau d'arbalète");
 		items.carreau.setItemMeta(items.m_carreau);
-		
+
 		items.m_parchemin_1.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc = new ArrayList<String>();
 		desc.add(ChatColor.DARK_BLUE + " Parchemin du retour.");
-		desc.add(ChatColor.AQUA + " Coût de mana: 15");
+		desc.add(ChatColor.AQUA + " Coût de mana: 25");
 		desc.add(ChatColor.GREEN + " Permet de revenir");
 		desc.add(ChatColor.GREEN + " à sa base.");
 		items.m_parchemin_1.setLore(desc);
 		items.parchemin_1.setItemMeta(items.m_parchemin_1);
-		
+
 		items.m_parchemin_2.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc1 = new ArrayList<String>();
 		desc1.add(ChatColor.DARK_BLUE + " Boule de Feu.");
-		desc1.add(ChatColor.AQUA + " Coût de mana: 25");
+		desc1.add(ChatColor.AQUA + " Coût de mana: 20");
 		desc1.add(ChatColor.GREEN + " Lance une boule de feu");
 		items.m_parchemin_2.setLore(desc1);
 		items.parchemin_2.setItemMeta(items.m_parchemin_2);
-		
+
 		items.m_parchemin_3.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc2 = new ArrayList<String>();
 		desc2.add(ChatColor.DARK_BLUE + " Empoisonnement.");
-		desc2.add(ChatColor.AQUA + " Coût de mana: 25");
+		desc2.add(ChatColor.AQUA + " Coût de mana: 45");
 		desc2.add(ChatColor.GREEN + " Empoisonne les joueurs");
 		desc2.add(ChatColor.GREEN + " dans un rayon de 6 blocs.");
 		items.m_parchemin_3.setLore(desc2);
 		items.parchemin_3.setItemMeta(items.m_parchemin_3);
-		
+
 		items.m_parchemin_4.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc3 = new ArrayList<String>();
 		desc3.add(ChatColor.DARK_BLUE + " Aura de feu");
@@ -243,7 +250,7 @@ public class Main extends JavaPlugin implements Listener {
 		desc3.add(ChatColor.GREEN + " autour de vous.");
 		items.m_parchemin_4.setLore(desc3);
 		items.parchemin_4.setItemMeta(items.m_parchemin_4);
-		
+
 		items.m_parchemin_5.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc4 = new ArrayList<String>();
 		desc4.add(ChatColor.DARK_BLUE + " Choc Terrestre");
@@ -253,7 +260,7 @@ public class Main extends JavaPlugin implements Listener {
 		desc4.add(ChatColor.GREEN + " de vous dans un rayon de 5 blocs.");
 		items.m_parchemin_5.setLore(desc4);
 		items.parchemin_5.setItemMeta(items.m_parchemin_5);
-		
+
 		items.m_parchemin_6.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc5 = new ArrayList<String>();
 		desc5.add(ChatColor.DARK_BLUE + " Invisibilité");
@@ -263,7 +270,7 @@ public class Main extends JavaPlugin implements Listener {
 		desc5.add(ChatColor.GREEN + " d'invisibilité.");
 		items.m_parchemin_6.setLore(desc5);
 		items.parchemin_6.setItemMeta(items.m_parchemin_6);
-		
+
 		items.m_parchemin_7.setDisplayName(ChatColor.GOLD + "Parchemin Magique");
 		ArrayList<String> desc6 = new ArrayList<String>();
 		desc6.add(ChatColor.DARK_BLUE + " Heal");
@@ -271,28 +278,27 @@ public class Main extends JavaPlugin implements Listener {
 		desc6.add(ChatColor.GREEN + " Vous redonne de la vie ");
 		items.m_parchemin_7.setLore(desc6);
 		items.parchemin_7.setItemMeta(items.m_parchemin_7);
-		
-	items.m_horseinvocator.setDisplayName(ChatColor.AQUA + "Invoquer la monture");
+
+		items.m_horseinvocator.setDisplayName(ChatColor.AQUA + "Invoquer la monture");
 		ArrayList<String> lore = new ArrayList<String>();
 		lore.add(ChatColor.GREEN + "Permet, en 3 secondes,");
 		lore.add(ChatColor.GREEN + "d'invoquer une monture.");
 		items.m_horseinvocator.setLore(lore);
 		items.horseinvocator.setItemMeta(items.m_horseinvocator);
-		
+
 	}
-	
+
 	private boolean setupQuester()
-	  {
-	    Plugin plugin = getServer().getPluginManager().getPlugin("Quester");
-	    if ((plugin != null) && ((plugin instanceof Quester))) {
-	      quester = (Quester)plugin;
-	    }
-	    return quester != null;
-	  }
-	
-	
+	{
+		Plugin plugin = getServer().getPluginManager().getPlugin("Quester");
+		if ((plugin != null) && ((plugin instanceof Quester))) {
+			quester = (Quester)plugin;
+		}
+		return quester != null;
+	}
+
 	//Conditions
-	
+
 	public static boolean isInDonjon(Player p){
 		if(indonjon.containsKey(p)){
 			return true;
@@ -301,65 +307,69 @@ public class Main extends JavaPlugin implements Listener {
 			return false;
 		}
 	}
-	
-	
+
+
 	//Saves
-	
+
 	public void saveDonjons(){
 
 		List<String> dnames = new ArrayList<String>();
 		for(int i = 0; i < donjons.size(); i++){
 			Donjon donj = donjons.get(i);
 			dnames.add(donj.getName());
-			getConfig().set("donjons." + donj.getName() + ".name", donj.getName());
-			getConfig().set("donjons." + donj.getName() + ".location", new SLocation(donj.getLocation()));
-			getConfig().set("donjons." + donj.getName() + ".door.corner1", new SLocation(donj.getEnterDoor().getCorner1()));
-			getConfig().set("donjons." + donj.getName() + ".door.corner2", new SLocation(donj.getEnterDoor().getCorner2()));
-			getConfig().set("donjons." + donj.getName() + ".active", donj.isActive());
-			getConfig().set("donjons." + donj.getName() + ".open", donj.isOpen());
-			
+			dconfig.set("donjons." + donj.getName() + ".name", donj.getName());
+			dconfig.set("donjons." + donj.getName() + ".location", new SLocation(donj.getLocation()));
+			dconfig.set("donjons." + donj.getName() + ".door.corner1", new SLocation(donj.getEnterDoor().getCorner1()));
+			dconfig.set("donjons." + donj.getName() + ".door.corner2", new SLocation(donj.getEnterDoor().getCorner2()));
+			dconfig.set("donjons." + donj.getName() + ".active", donj.isActive());
+			dconfig.set("donjons." + donj.getName() + ".open", donj.isOpen());
+
 			List<String> rnames = new ArrayList<String>();
-			
+
 			for(int i1 = 0; i1 < donj.getRooms().size(); i1++){
 				Room room = donj.getRooms().get(i1);
 				rnames.add(room.getName());
 
-				getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".name" , room.getName());
-				getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".location" , new SLocation(room.getLocation()));
-				getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".type" , room.getType().toString());
-				
+				dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".name" , room.getName());
+				dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".location" , new SLocation(room.getLocation()));
+				dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".type" , room.getType().toString());
+
 				int doors = 0;
 				for(int i11 = 0; i11 < room.getDoors().size(); i11++){
 					doors ++;
 					Door door = room.getDoors().get(i11);
-					getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".corner1" , new SLocation(door.getCorner1()));
-					getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".corner2" , new SLocation(door.getCorner2()));
-					getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".type" , door.getType().toString());
-					getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".open" , door.isOpenDefault());
+					dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".corner1" , new SLocation(door.getCorner1()));
+					dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".corner2" , new SLocation(door.getCorner2()));
+					dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".type" , door.getType().toString());
+					dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".open" , door.isOpenDefault());
 					if(door.getType() == DoorType.BOSS || door.getType() == DoorType.FIGHTROOMKEY || door.getType() == DoorType.KEY){
-						getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".key" , new SLocation(door.getLock()));
+						dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors." + String.valueOf(doors) + ".key" , new SLocation(door.getLock()));
 					}
 
 				}
 
-				getConfig().set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors.count" , room.getDoors().size());
+				dconfig.set("donjons." + donj.getName() + ".rooms." + room.getName() + ".doors.count" , room.getDoors().size());
 			}
-			getConfig().set("donjons." + donj.getName() + ".rooms.list", rnames);
+			dconfig.set("donjons." + donj.getName() + ".rooms.list", rnames);
 		}
-		saveConfig();
-		getConfig().set("donjons.list", dnames);
+		dconfig.set("donjons.list", dnames);
+		try {
+			dconfig.save(fichierConfig);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
 	public void loadDonjons(){
-		
-		List<String> dnames = getConfig().getStringList("donjons.list");
+
+		List<String> dnames = dconfig.getStringList("donjons.list");
 		for(int i = 0; i < dnames.size(); i++){
 			String name = dnames.get(i);
-			Location loc = (SLocation) getConfig().get("donjons." + name + ".location");
-			Location corner1 = (SLocation) getConfig().get("donjons." + name + ".door.corner1");
-			Location corner2 = (SLocation) getConfig().get("donjons." + name + ".door.corner2");
-			boolean active = getConfig().getBoolean("donjons." + name + ".active");
-			boolean open = getConfig().getBoolean("donjons." + name + ".open");
+			Location loc = (SLocation) dconfig.get("donjons." + name + ".location");
+			Location corner1 = (SLocation) dconfig.get("donjons." + name + ".door.corner1");
+			Location corner2 = (SLocation) dconfig.get("donjons." + name + ".door.corner2");
+			boolean active = dconfig.getBoolean("donjons." + name + ".active");
+			boolean open = dconfig.getBoolean("donjons." + name + ".open");
 			Donjon donj = new Donjon(loc, name, new Door(DoorType.NORMAL, corner1, corner2, true), active);
 			if(open){
 				donj.setOpen();
@@ -367,68 +377,72 @@ public class Main extends JavaPlugin implements Listener {
 			else{
 				donj.setClose();
 			}
-			List<String> rnames = getConfig().getStringList("donjons." + donj.getName() + ".rooms.list");
-			
+			List<String> rnames = dconfig.getStringList("donjons." + donj.getName() + ".rooms.list");
+
 			for(int j = 0; j < rnames.size(); j++){
 				String rname = rnames.get(j);
-				Location rloc = (SLocation) getConfig().get("donjons." + name + ".rooms." + rname + ".location");
-				String type = getConfig().getString("donjons." + name + ".rooms." + rname + ".type");
-				int doorcount = getConfig().getInt("donjons." + name + ".rooms." + rname + ".doors.count" );
+				Location rloc = (SLocation) dconfig.get("donjons." + name + ".rooms." + rname + ".location");
+				String type = dconfig.getString("donjons." + name + ".rooms." + rname + ".type");
+				int doorcount = dconfig.getInt("donjons." + name + ".rooms." + rname + ".doors.count" );
 				ArrayList<Door> doorslist = new ArrayList<Door>();
 				int doors = 0;
-					for(int x = 1; x <= doorcount; x++){
-						doors++;
-						Location dcorner1 = (SLocation) getConfig().get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".corner1");
-						Location dcorner2 = (SLocation) getConfig().get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".corner2");
-						String dtype = getConfig().getString("donjons." + name + ".rooms." + rname + ".doors." + doors + ".type");
-						boolean opendefault = getConfig().getBoolean("donjons." + name + ".rooms." + rname + ".doors." + doors + ".open");
-							
-						if(dtype.equals(DoorType.BOSS.toString()) || dtype.equals(DoorType.FIGHTROOMKEY.toString()) || dtype.equals(DoorType.KEY.toString())){
-							if(getConfig().get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".key") != null){
-							Location dloc = (SLocation) getConfig().get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".key");
-							
+				for(int x = 1; x <= doorcount; x++){
+					doors++;
+					Location dcorner1 = (SLocation) dconfig.get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".corner1");
+					Location dcorner2 = (SLocation) dconfig.get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".corner2");
+					String dtype = dconfig.getString("donjons." + name + ".rooms." + rname + ".doors." + doors + ".type");
+					boolean opendefault = dconfig.getBoolean("donjons." + name + ".rooms." + rname + ".doors." + doors + ".open");
+
+					if(dtype.equals(DoorType.BOSS.toString()) || dtype.equals(DoorType.FIGHTROOMKEY.toString()) || dtype.equals(DoorType.KEY.toString())){
+						if(dconfig.get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".key") != null){
+							Location dloc = (SLocation) dconfig.get("donjons." + name + ".rooms." + rname + ".doors." + doors + ".key");
+
 							Door door = new Door(DoorType.valueOf(dtype), dcorner1, dcorner2, dloc, opendefault);
 							door.setLock(dloc);
 							doorslist.add(door);
 							System.out.println("key door");
-							}
-							else{
-								System.out.println("Location key = null");
-							}
 						}
 						else{
-							System.out.println("default door");
-							Door door = new Door(DoorType.valueOf(dtype), dcorner1, dcorner2, opendefault);
-							doorslist.add(door);
+							System.out.println("Location key = null");
 						}
 					}
+					else{
+						System.out.println("default door");
+						Door door = new Door(DoorType.valueOf(dtype), dcorner1, dcorner2, opendefault);
+						doorslist.add(door);
+					}
+				}
 				Room room = new Room(rname, doorslist, rloc, RoomType.valueOf(type));	
 				donj.addRoom(room);
 			}
 			donjons.add(donj);
 		}
-		saveConfig();
+		try {
+			dconfig.save(fichierConfig);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	//Fonctions
-	
+
 	public void createCyl(Location loc, int r, Material mat) {
-        int cx = loc.getBlockX();
-        int cy = loc.getBlockY();
-        int cz = loc.getBlockZ();
-        World w = loc.getWorld();
-        int rSquared = r * r;
-        for (int x = cx - r; x <= cx + r; x++) {
-            for (int z = cz - r; z <= cz + r; z++) {
-                if ((cx - x) * (cx - x) + (cz - z) * (cz - z) <= rSquared) {
-                    Location cylBlock = new Location(w, x, cy, z);
-                    if(w.getBlockAt(cylBlock).getType().equals(Material.AIR) || w.getBlockAt(cylBlock).getType().equals(Material.FIRE))
-                     w.getBlockAt(cylBlock).setType(mat);
-                }
-            }
-        }
-    }
-	
+		int cx = loc.getBlockX();
+		int cy = loc.getBlockY();
+		int cz = loc.getBlockZ();
+		World w = loc.getWorld();
+		int rSquared = r * r;
+		for (int x = cx - r; x <= cx + r; x++) {
+			for (int z = cz - r; z <= cz + r; z++) {
+				if ((cx - x) * (cx - x) + (cz - z) * (cz - z) <= rSquared) {
+					Location cylBlock = new Location(w, x, cy, z);
+					if(w.getBlockAt(cylBlock).getType().equals(Material.AIR) || w.getBlockAt(cylBlock).getType().equals(Material.FIRE))
+						w.getBlockAt(cylBlock).setType(mat);
+				}
+			}
+		}
+	}
+
 	private void openGUI(Player player){
 		Inventory inv = Bukkit.createInventory(null, 9, ChatColor.AQUA + "Selectionne ta race");
 		ItemStack humain = new ItemStack(Material.BOOK);
@@ -439,25 +453,26 @@ public class Main extends JavaPlugin implements Listener {
 		ItemMeta m_orc = orc.getItemMeta();
 		ItemStack elfe = new ItemStack(Material.BOW);
 		ItemMeta m_elfe = elfe.getItemMeta();
-		
+
 		m_humain.setDisplayName(ChatColor.GOLD + "Humain");
 		m_nain.setDisplayName(ChatColor.DARK_GRAY + "Nain");
 		m_orc.setDisplayName(ChatColor.DARK_GREEN + "Orc");
 		m_elfe.setDisplayName(ChatColor.WHITE + "Elfe");
-		
+
 		humain.setItemMeta(m_humain);
 		nain.setItemMeta(m_nain);
 		orc.setItemMeta(m_orc);
 		elfe.setItemMeta(m_elfe);
-		
+
 		inv.setItem(0, humain);
 		inv.setItem(1, nain);
 		inv.setItem(2, orc);
 		inv.setItem(3, elfe);
-		
+
 		player.openInventory(inv);
-		
+
 	}
+
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args){
 		Player p = (Player) sender;
@@ -481,71 +496,71 @@ public class Main extends JavaPlugin implements Listener {
 				}
 			}
 			else if(args[0].equals("give")){
-				
+
 			}
 			else if(args[0].equals("addroom")){
 				if(args.length == 4){
 					if(getDonjonByName(args[1]) != null){
 						Donjon donj = getDonjonByName(args[1]);
-							for(int i = 0; i < donj.getRooms().size(); i++){
-								Room room = donj.getRooms().get(i);
-								if(room.getName().equals(args[2])){
-									p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " La salle " + args[2] + " existe déjà.");
-									return false;
-								}
+						for(int i = 0; i < donj.getRooms().size(); i++){
+							Room room = donj.getRooms().get(i);
+							if(room.getName().equals(args[2])){
+								p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " La salle " + args[2] + " existe déjà.");
+								return false;
 							}
+						}
 						switch(args[3]){
-							case "fightroom":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.FIGHTROOM);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Quand tu as ajouté ta porte, si tu veux en ajouter une nouvelle, reselectionne ta porte. sinon, fait /rpg finish.");
-								break;
-							case "bossroom":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.BOSSROOM);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-								break;
-							case "rewardroom":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.REWARDROOM);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-								break;
-							case "room":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.ROOM);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-							case "rewardroomkey":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.REWARDROOMKEY);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-								break;
-							case "roomkey":
-								setroom_donjon.put(p, donj);
-								setroom_name.put(p, args[2]);
-								setroom_type.put(p, RoomType.ROOMKEY);
-								setroom_location.put(p, p.getLocation());
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
-								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
-								break;
-							default:
-								p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " Le type de salle est incorrect... Les types sont: room, roomkey, bossroom, fightroom, rewardroom, rewardroomkey.");
-								
+						case "fightroom":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.FIGHTROOM);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Quand tu as ajouté ta porte, si tu veux en ajouter une nouvelle, reselectionne ta porte. sinon, fait /rpg finish.");
+							break;
+						case "bossroom":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.BOSSROOM);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+							break;
+						case "rewardroom":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.REWARDROOM);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+							break;
+						case "room":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.ROOM);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+						case "rewardroomkey":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.REWARDROOMKEY);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+							break;
+						case "roomkey":
+							setroom_donjon.put(p, donj);
+							setroom_name.put(p, args[2]);
+							setroom_type.put(p, RoomType.ROOMKEY);
+							setroom_location.put(p, p.getLocation());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Maintenant, ajoute des portes à ta salle.");
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Selectionne via un clic droit le point 1 et le point 2.");
+							break;
+						default:
+							p.sendMessage(ChatColor.GOLD + "[RPG]" + ChatColor.DARK_RED + " Le type de salle est incorrect... Les types sont: room, roomkey, bossroom, fightroom, rewardroom, rewardroomkey.");
+
 						}
 					}
 					else{
@@ -610,10 +625,10 @@ public class Main extends JavaPlugin implements Listener {
 								break;
 							default:
 								break;
-							
+
 							}
 						}
-						
+
 					}
 				}
 			}
@@ -715,15 +730,277 @@ public class Main extends JavaPlugin implements Listener {
 					}
 				}
 			}
-			else if(args[0].endsWith("spawncustom")){
-				
+			else if(args[0].equals("custommob")){
+				if(args[1].equals("list")){
+					for(int i = 0; i < mobs.size(); i++){
+						p.sendMessage(mobs.get(i).getName());
+					}
+				}
+				else if(args[1].equals("create")){
+					if(args.length > 3){
+						if(args.length == 4){
+							if(!isAlreadyExisting(args[2])){
+								switch(args[3]){
+									case "zombie":
+										CustomEntityPattern zpattern = new CustomEntityPattern(args[2], CustomMobType.ZOMBIE);
+										mobs.add(zpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "skeleton":
+										CustomEntityPattern spattern = new CustomEntityPattern(args[2], CustomMobType.SKELETON);
+										mobs.add(spattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "creeper":
+										CustomEntityPattern cpattern = new CustomEntityPattern(args[2], CustomMobType.CREEPER);
+										mobs.add(cpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "spider":
+										CustomEntityPattern sppattern = new CustomEntityPattern(args[2], CustomMobType.SPIDER);
+										mobs.add(sppattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "cavespider":
+										CustomEntityPattern cspattern = new CustomEntityPattern(args[2], CustomMobType.CAVESPIDER);
+										mobs.add(cspattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "pigman":
+										CustomEntityPattern ppattern = new CustomEntityPattern(args[2], CustomMobType.PIGMAN);
+										mobs.add(ppattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "zombiehorse":
+										CustomEntityPattern zhpattern = new CustomEntityPattern(args[2], CustomMobType.ZOMBIEHORSE);
+										mobs.add(zhpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "skeletonhorse":
+										CustomEntityPattern shpattern = new CustomEntityPattern(args[2], CustomMobType.SKELETONHORSE);
+										mobs.add(shpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "slime":
+										CustomEntityPattern slpattern = new CustomEntityPattern(args[2], CustomMobType.SLIME);
+										mobs.add(slpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "magmacube":
+										CustomEntityPattern mcpattern = new CustomEntityPattern(args[2], CustomMobType.MAGMACUBE);
+										mobs.add(mcpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "blaze":
+										CustomEntityPattern bpattern = new CustomEntityPattern(args[2], CustomMobType.BLAZE);
+										mobs.add(bpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "witch":
+										CustomEntityPattern wpattern = new CustomEntityPattern(args[2], CustomMobType.WITCH);
+										mobs.add(wpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "silverfish":
+										CustomEntityPattern sipattern = new CustomEntityPattern(args[2], CustomMobType.SILVERFISH);
+										mobs.add(sipattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "wolf":
+										CustomEntityPattern wopattern = new CustomEntityPattern(args[2], CustomMobType.WOLF);
+										mobs.add(wopattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "bat":
+										CustomEntityPattern bapattern = new CustomEntityPattern(args[2], CustomMobType.BAT);
+										mobs.add(bapattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "cow":
+										CustomEntityPattern copattern = new CustomEntityPattern(args[2], CustomMobType.COW);
+										mobs.add(copattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "ocelot":
+										CustomEntityPattern ocpattern = new CustomEntityPattern(args[2], CustomMobType.OCELOT);
+										mobs.add(ocpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+
+									case "squid":
+										CustomEntityPattern sqpattern = new CustomEntityPattern(args[2], CustomMobType.SQUID);
+										mobs.add(sqpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+										
+									case "horse":
+										CustomEntityPattern hpattern = new CustomEntityPattern(args[2], CustomMobType.HORSE);
+										mobs.add(hpattern);
+										p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob à bien été créé...");
+										break;
+								}
+							}
+							else{
+								p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le mob existe déja");
+							}
+						}
+					}
+				}
+				else if(args[1].equals("sethealth")){
+					if(args.length == 4){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setHealth(Integer.parseInt(args[3]));
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La vie du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définie à " + args[3]);
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setstrength")){
+					if(args.length == 4){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setHealth(Integer.parseInt(args[3]));
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La force du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définie à " + args[3]);
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setspeed")){
+					if(args.length == 4){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setSpeed(Integer.parseInt(args[3]));
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "La vitesse du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définie à " + args[3] + " blocs par secondes.");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setrange")){
+					if(args.length == 4){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setRange(Integer.parseInt(args[3]));
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le rayon de vision du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définie à " + args[3]);
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("sethelmet")){
+					if(args.length == 3){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setHelmet(p.getItemInHand());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le slot casque du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définit");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setchestplate")){
+					if(args.length == 3){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setChestplate(p.getItemInHand());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le slot plastron du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définit");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setleggings")){
+					if(args.length == 3){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setLeggings(p.getItemInHand());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le slot pantalon du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définit");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setboots")){
+					if(args.length == 3){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setBoots(p.getItemInHand());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le slot bottes du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définit");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("sethand")){
+					if(args.length == 3){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+							pattern.setItemInHand(p.getItemInHand());
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le slot main du mob " + ChatColor.GREEN + args[2] + ChatColor.AQUA + " a été définit");
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("setzombietype")){
+					if(args.length == 4){
+						if(getCustomEntityByName(args[2]) != null){
+							CustomEntityPattern pattern = getCustomEntityByName(args[2]);
+								if(pattern.getType() == CustomMobType.ZOMBIE){
+									if(args[3].equals("villager")){
+										pattern.setZombieType(ZombieType.VILLAGER);
+									}
+									if(args[3].equals("babyvillager")){
+										pattern.setZombieType(ZombieType.BABYVILLAGER);
+									}
+									if(args[3].equals("baby")){
+										pattern.setZombieType(ZombieType.BABY);
+									}
+								}
+						}
+						else{
+							p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.DARK_RED + "Le mob n'existe pas...");
+						}
+					}
+				}
+				else if(args[1].equals("spawn")){
+					getCustomEntityByName(args[2]).spawn(p.getLocation());
+				}
 			}
 		}
 		if(args[0].equals("GUI")){
 			openGUI(p);
 		}
 		if(args.length == 2){
-			
+
 			if(args[0].equals("givescroll")){
 				switch(args[1]){
 				case "retour" : 
@@ -748,16 +1025,16 @@ public class Main extends JavaPlugin implements Listener {
 					p.getInventory().addItem(items.parchemin_7);
 					break;
 				}
-					
+
 			}
 			if(args[0].equals("getslot")){
 				int slot = Integer.parseInt(args[1]);
 				ItemStack item = p.getInventory().getItem(slot);
 				p.sendMessage("Le slot " + args[1] + " contient " + item.getType());
 			}
-			
+
 			if(args[0].equals("getrace")){
-				
+
 				if(getConfig().get("users." + args[1] + ".race") != null){
 					p.sendMessage(ChatColor.GOLD + "[RPG] " + ChatColor.AQUA + "Le joueur " + args[1] + " est un " + getConfig().get("users." + args[1] + ".race"));
 				}
@@ -827,8 +1104,8 @@ public class Main extends JavaPlugin implements Listener {
 		return false;
 	}
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	public class CooldownArbalete implements Runnable{
 
 		ArrayList<Player> list;
@@ -837,7 +1114,7 @@ public class Main extends JavaPlugin implements Listener {
 			list = liste;
 			p = player;
 		}
-		
+
 		@Override
 		public void run() {
 			try {
